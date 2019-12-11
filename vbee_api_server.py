@@ -2,8 +2,18 @@ import requests
 import time
 import hashlib
 import base64
+import yaml
 
 from flask import Flask, request, jsonify
+
+def load_yaml(filepath, mode='r', encoding='utf-8'):
+    with open(filepath, mode, encoding=encoding) as f:
+        data = yaml.full_load(f)
+        return data
+
+def save_yaml(data, filepath, mode='w', encoding='utf-8'):
+    with open(filepath, mode, encoding=encoding) as f:
+        yaml.dump(data, f)
 
 app = Flask(__name__)
 
@@ -25,9 +35,6 @@ def get_voice():
 
     rate: range from 0.1 to 1.9
     '''
-    API_URL = 'https://tts.vbeecore.com/api/tts'
-    APP_ID = ''
-    PRIVATE_KEY = ''
     TIME = time.time()
 
     MD5_KEY = hashlib.md5(f"{PRIVATE_KEY}:{APP_ID}:{TIME}".encode()).hexdigest()
@@ -70,4 +77,10 @@ def get_voice():
         return jsonify({})
 
 if __name__ == '__main__':
+    config = load_yaml('config.yaml')
+
+    API_URL = config['api_url']
+    APP_ID = config['app_id']
+    PRIVATE_KEY = config['private_key']
+    
     app.run(debug=True, threaded=True)
