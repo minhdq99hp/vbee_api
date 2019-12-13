@@ -4,7 +4,7 @@ import hashlib
 import base64
 import yaml
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 
 def load_yaml(filepath, mode='r', encoding='utf-8'):
     with open(filepath, mode, encoding=encoding) as f:
@@ -35,19 +35,23 @@ def get_voice():
 
     rate: range from 0.1 to 1.9
     '''
-    TIME = time.time()
 
+    # Check Bearer Token for authorization
+    if request.headers['Authorization'] != 'Bearer ' + BEARER_TOKEN:
+        return Response("Access Denied !")
+
+    TIME = time.time()
     MD5_KEY = hashlib.md5(f"{PRIVATE_KEY}:{APP_ID}:{TIME}".encode()).hexdigest()
-    USER_ID = ''
 
     data = request.json
 
     input_text = data['input_text']
+    voice = "hn_male_xuantin_vdts_48k-hsmm" if 'voice' not in data else data['voice']
 
     params = {
         # required
         "input_text": input_text,
-        "voice": "hn_male_xuantin_vdts_48k-hsmm",
+        "voice": voice,
         "app_id": APP_ID,
         "time": TIME,
         "key": MD5_KEY,
@@ -70,8 +74,13 @@ def get_voice():
         response = requests.post(API_URL, params=params, timeout=300)
 
     if response.status_code == 200:
+        
+        b64_string = base64.b64encode(response.content).decode('utf-8')
+
+        # with open('voice.wav', 'wb') as f:
+        #     f.write(base64.b64decode(b64_string))
         return jsonify({
-            "audio": base64.b64encode(response.content)
+            "audio": b64_string
             })
     else:
         return jsonify({})
@@ -79,8 +88,10 @@ def get_voice():
 if __name__ == '__main__':
     config = load_yaml('config.yaml')
 
+    BEARER_TOKEN = config['bearer_token']
     API_URL = config['api_url']
     APP_ID = config['app_id']
+    USER_ID = config['user_id']
     PRIVATE_KEY = config['private_key']
     
     app.run(debug=True, threaded=True)

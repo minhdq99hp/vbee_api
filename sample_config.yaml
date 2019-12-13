@@ -1,3 +1,5 @@
 api_url: https://tts.vbeecore.com/api/tts
 app_id: <EMPTY>
+user_id: <EMPTY>
 private_key: <EMPTY>
+bearer_token: <EMPTY>
